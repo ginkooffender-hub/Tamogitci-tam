@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тамагочи в Telegram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .game-container {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Статистика питомца */
+        .stats-panel {
+            background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .stat-item {
+            margin-bottom: 15px;
+        }
+
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .stat-bar-bg {
+            width: 100%;
+            height: 20px;
+            background-color: #e2e8f0;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            width: 70%;
+            border-radius: 25px;
+            transition: width 0.5s ease-out;
+        }
+
+        .hunger-fill { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .happiness-fill { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+        .energy-fill { background: linear-gradient(90deg, #34d399, #10b981); }
+
+        .stat-value {
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        /* Изображение питомца (ASCII-арт пока нет 3D) */
+        .pet-display {
+            background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
+            border-radius: 40px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 3px solid white;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .pet-emoji {
+            font-size: 100px;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2));
+            animation: float 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .pet-emoji:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .pet-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-top: 10px;
+        }
+
+        .pet-status {
+            font-size: 16px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        /* Кнопки действий */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: white;
+            border: none;
+            padding: 15px 5px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #4f46e5;
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .action-btn span {
+            font-size: 24px;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+            background: #4f46e5;
+            color: white;
+        }
+
+        /* Секция с монетами и рефералами */
+        .economy-panel {
+            background: linear-gradient(145deg, #fef9c3, #fde047);
+            border-radius: 25px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coins {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        .ref-link {
+            background: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #b45309;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .ref-link:active {
+            background: #b45309;
+            color: white;
+        }
+
+        /* Сообщения */
+        .message {
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 50px;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 10px;
+            border-left: 5px solid #10b981;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Возраст */
+        .age-display {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+    
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🐾 TAMA PET</h1>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-panel">
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span>🍖 Голод</span>
+                    <span class="stat-value" id="hungerValue">70%</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill hunger-fill" id="hungerBar" style="width: 70%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span>😊 Счастье</span>
+                    <span class="stat-value" id="happinessValue">70%</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill happiness-fill" id="happinessBar" style="width: 70%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span>⚡ Энергия</span>
+                    <span class="stat-value" id="energyValue">70%</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill energy-fill" id="energyBar" style="width: 70%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Питомец -->
+        <div class="pet-display" id="petDisplay">
+            <div class="pet-emoji" id="petEmoji">🐣</div>
+            <div class="pet-name" id="petName">Малыш</div>
+            <div class="pet-status" id="petStatus">👶 Только родился!</div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="action-buttons">
+            <button class="action-btn" id="feedBtn">
+                <span>🍖</span> Кормить
+            </button>
+            <button class="action-btn" id="playBtn">
+                <span>🎮</span> Играть
+            </button>
+            <button class="action-btn" id="sleepBtn">
+                <span>😴</span> Спать
+            </button>
+        </div>
+
+        <!-- Экономика -->
+        <div class="economy-panel">
+            <div class="coins">
+                <span>🪙</span>
+                <span id="coinBalance">0</span>
+            </div>
+            <button class="ref-link" id="referralBtn">📨 Пригласить друга +50</button>
+        </div>
+
+        <!-- Сообщения -->
+        <div class="message hidden" id="messageBox">
+            <span id="messageText"></span>
+        </div>
+
+        <!-- Возраст -->
+        <div class="age-display" id="ageDisplay">
+            Возраст: <span id="ageValue">0</span> дней
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем на весь экран
+        tg.ready(); // Сообщаем, что приложение готово
+
+        // Состояние игры
+        let gameState = {
+            hunger: 70,
+            happiness: 70,
+            energy: 70,
+            age: 0,
+            coins: 0,
+            cycles: 0,
+            isAlive: true,
+            evolution: 'baby', // baby, toddler, teen, adult
+            lastAction: 'init'
+        };
+
+        // Элементы DOM
+        const elements = {
+            hungerBar: document.getElementById('hungerBar'),
+            hungerValue: document.getElementById('hungerValue'),
+            happinessBar: document.getElementById('happinessBar'),
+            happinessValue: document.getElementById('happinessValue'),
+            energyBar: document.getElementById('energyBar'),
+            energyValue: document.getElementById('energyValue'),
+            petEmoji: document.getElementById('petEmoji'),
+            petName: document.getElementById('petName'),
+            petStatus: document.getElementById('petStatus'),
+            coinBalance: document.getElementById('coinBalance'),
+            messageBox: document.getElementById('messageBox'),
+            messageText: document.getElementById('messageText'),
+            ageValue: document.getElementById('ageValue'),
+            feedBtn: document.getElementById('feedBtn'),
+            playBtn: document.getElementById('playBtn'),
+            sleepBtn: document.getElementById('sleepBtn'),
+            referralBtn: document.getElementById('referralBtn')
+        };
+
+        // Функция обновления UI
+        function render() {
+            if (!gameState.isAlive) {
+                elements.petEmoji.textContent = '💀';
+                elements.petName.textContent = 'Питомец умер';
+                elements.petStatus.textContent = 'Начните заново';
+                return;
+            }
+
+            // Обновляем шкалы
+            elements.hungerBar.style.width = gameState.hunger + '%';
+            elements.hungerValue.textContent = gameState.hunger + '%';
+            elements.happinessBar.style.width = gameState.happiness + '%';
+            elements.happinessValue.textContent = gameState.happiness + '%';
+            elements.energyBar.style.width = gameState.energy + '%';
+            elements.energyValue.textContent = gameState.energy + '%';
+
+            // Обновляем монеты
+            elements.coinBalance.textContent = gameState.coins;
+
+            // Обновляем возраст
+            elements.ageValue.textContent = gameState.age;
+
+            // Меняем emoji в зависимости от состояния
+            if (gameState.hunger < 30) {
+                elements.petEmoji.textContent = '😫';
+                elements.petStatus.textContent = '🆘 Голодный!';
+            } else if (gameState.happiness < 30) {
+                elements.petEmoji.textContent = '😞';
+                elements.petStatus.textContent = '😢 Грустный';
+            } else if (gameState.energy < 30) {
+                elements.petEmoji.textContent = '😴';
+                elements.petStatus.textContent = '💤 Хочет спать';
+            } else {
+                // Эволюция
+                if (gameState.age < 2) {
+                    elements.petEmoji.textContent = '🐣';
+                    elements.petName.textContent = 'Малыш';
+                } else if (gameState.age < 5) {
+                    elements.petEmoji.textContent = '🐥';
+                    elements.petName.textContent = 'Подросток';
+                } else {
+                    elements.petEmoji.textContent = '🦊';
+                    elements.petName.textContent = 'Взрослый';
+                }
+                elements.petStatus.textContent = '😊 Счастлив';
+            }
+        }
+
+        // Показать сообщение
+        function showMessage(text, isGood = true) {
+            elements.messageText.textContent = text;
+            elements.messageBox.classList.remove('hidden');
+            elements.messageBox.style.background = isGood ? '#ecfdf5' : '#fee2e2';
+            elements.messageBox.style.color = isGood ? '#065f46' : '#991b1b';
+            
+            setTimeout(() => {
+                elements.messageBox.classList.add('hidden');
+            }, 2000);
+        }
+
+        // Проверка смерти
+        function checkDeath() {
+            if (gameState.hunger <= 0 || gameState.happiness <= 0 || gameState.energy <= 0) {
+                gameState.isAlive = false;
+                showMessage('💔 Питомец умер... Начните заново', false);
+                render();
+                return true;
+            }
+            return false;
+        }
+
+        // Действия игрока
+        function feed() {
+            if (!gameState.isAlive) return;
+            
+            gameState.hunger = Math.min(100, gameState.hunger + 20);
+            gameState.energy = Math.max(0, gameState.energy - 5);
+            gameState.coins += 10;
+            gameState.lastAction = 'feed';
+            
+            showMessage('🍖 Питомец покормлен! +10 монет');
+            render();
+        }
+
+        function play() {
+            if (!gameState.isAlive) return;
+            
+            gameState.happiness = Math.min(100, gameState.happiness + 20);
+            gameState.energy = Math.max(0, gameState.energy - 10);
+            gameState.hunger = Math.max(0, gameState.hunger - 5);
+            gameState.coins += 15;
+            gameState.lastAction = 'play';
+            
+            showMessage('🎮 Поиграли с питомцем! +15 монет');
+            render();
+        }
+
+        function sleep() {
+            if (!gameState.isAlive) return;
+            
+            gameState.energy = Math.min(100, gameState.energy + 30);
+            gameState.hunger = Math.max(0, gameState.hunger - 5);
+            gameState.coins += 5;
+            gameState.lastAction = 'sleep';
+            
+            showMessage('😴 Питомец поспал! +5 монет');
+            render();
+        }
+
+        // Реферальная программа
+        function handleReferral() {
+            if (!gameState.isAlive) return;
+            
+            // В реальном приложении здесь будет открытие реферальной ссылки
+            gameState.coins += 50;
+            showMessage('✨ Пригласи друга! +50 монет', true);
+            render();
+            
+            // Отправляем данные в Telegram (для реферальной программы)
+            tg.sendData(JSON.stringify({
+                action: 'referral',
+                coins: gameState.coins
+            }));
+        }
+
+        // Игровой цикл (каждые 5 секунд)
+        function gameLoop() {
+            if (!gameState.isAlive) return;
+
+            // Уменьшаем параметры
+            gameState.hunger = Math.max(0, gameState.hunger - 2);
+            gameState.happiness = Math.max(0, gameState.happiness - 1);
+            gameState.energy = Math.max(0, gameState.energy - 1);
+            
+            // Увеличиваем возраст каждые 10 циклов
+            gameState.cycles++;
+            if (gameState.cycles % 10 === 0) {
+                gameState.age++;
+            }
+
+            // Даем монеты за каждый цикл (пассивный доход)
+            gameState.coins += 1;
+
+            // Проверка на смерть
+            if (checkDeath()) {
+                return;
+            }
+
+            render();
+        }
+
+        // Инициализация игры
+        function initGame() {
+            // Пробуем получить данные пользователя из Telegram
+            const initData = tg.initDataUnsafe;
+            if (initData && initData.user) {
+                console.log('Пользователь:', initData.user);
+                // Можно приветствовать пользователя по имени
+                elements.petStatus.textContent = `Привет, ${initData.user.first_name}!`;
+            }
+
+            // Проверяем, есть ли реферальный параметр
+            if (initData && initData.start_param) {
+                // Пришел по реферальной ссылке
+                gameState.coins += 100; // Бонус за реферала
+                showMessage('🎉 Добро пожаловать! +100 монет за реферала', true);
+            }
+
+            render();
+            
+            // Запускаем игровой цикл
+            setInterval(gameLoop, 5000); // Каждые 5 секунд
+        }
+
+        // Назначаем обработчики событий
+        elements.feedBtn.addEventListener('click', feed);
+        elements.playBtn.addEventListener('click', play);
+        elements.sleepBtn.addEventListener('click', sleep);
+        elements.referralBtn.addEventListener('click', handleReferral);
+
+        // Запускаем игру
+        initGame();
+
+        // Обработка закрытия приложения
+        window.addEventListener('beforeunload', () => {
+            // Можно сохранить состояние, но в простой версии не обязательно
+        });
+    </script>
+</body>
+</html>
